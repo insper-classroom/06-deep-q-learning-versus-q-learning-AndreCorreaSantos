@@ -35,10 +35,10 @@ class DeepQLearning:
     def select_action(self, state):
         if np.random.rand() < self.epsilon:
             return random.randrange(self.env.action_space.n)
-        state_tensor = self.convert(state)
+        state_tensor = self.convert(state).unsqueeze(0)
         with torch.no_grad():
             action = self.model(state_tensor)
-        return np.argmax(action.cpu().numpy())
+        return torch.argmax(action).item()
 
     # cria uma memoria longa de experiencias
     def experience(self, state, action, reward, next_state, terminal):
@@ -48,27 +48,26 @@ class DeepQLearning:
         # soh acontece o treinamento depois da memoria ser maior que o batch_size informado
         if len(self.memory) > self.batch_size:
             batch = random.sample(self.memory, self.batch_size) #escolha aleatoria dos exemplos
-            states = np.array([i[0] for i in batch])
-            actions = np.array([i[1] for i in batch])
-            rewards = np.array([i[2] for i in batch])
-            next_states = np.array([i[3] for i in batch])
-            terminals = np.array([i[4] for i in batch])
-
-            # np.squeeze(): Remove single-dimensional entries from the shape of an array.
-            # Para se adequar ao input
-            states = np.squeeze(states)
-            next_states = np.squeeze(next_states)
-
-            # usando o modelo para selecionar as melhores acoes
-            next_max = np.amax(self.predict_on_batch(next_states), axis=1)
+            # everything to tensors on gpu
+            states = torch.tensor([i[0] for i in batch], dtype=torch.float32, device=self.device)
+            actions = torch.tensor([i[1] for i in batch], dtype=torch.long, device=self.device)
+            rewards = torch.tensor([i[2] for i in batch], dtype=torch.float32, device=self.device)
+            next_states = torch.tensor([i[3] for i in batch], dtype=torch.float32, device=self.device)
+            terminals = torch.tensor([i[4] for i in batch], dtype=torch.float32, device=self.device)
             
-            targets = rewards + self.gamma * (next_max) * (1 - terminals)
+
+
+            next_max = torch.max(self.predict_on_batch(next_states), dim=1)[0].detach()
+            print(f"Rewards shape: {rewards.shape}")
+            print(f"Next max shape: {next_max.shape}")
+            print(f"Terminals shape: {terminals.shape}")
+
+
+            targets = rewards + self.gamma * next_max * (1 - terminals)
+            
             targets_full = self.predict_on_batch(states)
-            indexes = np.array([i for i in range(self.batch_size)])
-            
-            # usando os q-valores para atualizar os pesos da rede
-            targets_full[[indexes], [actions]] = targets
-
+            targets_full = targets_full.clone()  # Clone to avoid in-place modification
+            targets_full[torch.arange(self.batch_size), actions] = targets.detach()
 
             self.fit_model(states, targets_full)
             
@@ -77,20 +76,18 @@ class DeepQLearning:
 
     def predict_on_batch(self, states):
         self.model.eval()
-        states = self.convert(states)
         with torch.no_grad():
             predictions = self.model(states)
-        return predictions.cpu().numpy()
+        return predictions
 
-    def fit_model(self,states, targets_full):
+    def fit_model(self, states, targets_full):
         self.model.train()
-        for data,target in zip(states,targets_full):
-                data,target = self.convert(data),self.convert(target)
-                self.optimizer.zero_grad()
-                output = self.model(data) # inference
-                loss = self.criterion(output,target)
-                loss.backward()
-                self.optimizer.step()
+        
+        self.optimizer.zero_grad()
+        output = self.model(states)  # Forward pass
+        loss = self.criterion(output, targets_full)  # Compute loss
+        loss.backward()  # Backpropagate
+        self.optimizer.step()  # Update weights
 
     def train(self):
         rewards = []
