@@ -69,14 +69,11 @@ class DeepQLearning:
             print(f"Targets shape {targets.shape}")
             
             targets_full = self.predict_on_batch(states)
-           
-
-            targets_full =  torch.max(targets_full, dim=1).values
-            targets_full = targets_full.clone()  # Clone to avoid in-place modification
             print(f"targets_full shape {targets_full.shape}")
             print(f"actions {actions.shape}")
 
-            targets_full[actions] = targets
+            indexes = np.array([i for i in range(0,self.batch_size)])
+            targets_full[[indexes][actions]] = targets
             print(f"states {states.shape}")
             self.fit_model(states, targets_full)
             
