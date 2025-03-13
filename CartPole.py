@@ -38,6 +38,9 @@ model = nn.Sequential(
             nn.Linear(256,env.action_space.n)
         )
 
+criterion = nn.MSELoss()# MSE
+optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)# ADAM
+
 gamma = 0.99 
 epsilon = 1.0
 epsilon_min = 0.01
@@ -47,7 +50,7 @@ batch_size = 64
 memory = deque(maxlen=10000) #talvez usar uma memoria mais curta
 max_steps = 500
 
-DQN = DeepQLearning(env, gamma, epsilon, epsilon_min, epsilon_dec, episodes, batch_size, memory, model, max_steps)
+DQN = DeepQLearning(env, gamma, epsilon, epsilon_min, epsilon_dec, episodes, batch_size, memory, model, criterion, optimizer, max_steps)
 rewards = DQN.train()
 
 import matplotlib.pyplot as plt

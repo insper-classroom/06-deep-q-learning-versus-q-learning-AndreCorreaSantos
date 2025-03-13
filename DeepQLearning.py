@@ -13,7 +13,7 @@ class DeepQLearning:
     # https://arxiv.org/abs/1312.5602
     #
 
-    def __init__(self, env, gamma, epsilon, epsilon_min, epsilon_dec, episodes, batch_size, memory, model, max_steps):
+    def __init__(self, env, gamma, epsilon, epsilon_min, epsilon_dec, episodes, batch_size, memory, model, criterion,optimizer, max_steps):
         self.env = env
         self.gamma = gamma
         self.epsilon = epsilon
@@ -23,6 +23,8 @@ class DeepQLearning:
         self.batch_size = batch_size
         self.memory = memory
         self.model = model
+        self.criterion = criterion # loss function
+        self.optimizer = optimizer # optimizer --> RESEARCH WHAT IT DOES LATER
         self.max_steps = max_steps
         self.device = torch.device("cuda")
         self.model.to(self.device)
@@ -83,11 +85,12 @@ class DeepQLearning:
     def fit_model(self,states, targets_full):
         self.model.train()
         for data,target in zip(states,targets_full):
-            print("data")
-            print(data)
-            print("target")
-            print(target)
-
+                data,target = self.convert(data),self.convert(target)
+                self.optimizer.zero_grad()
+                output = self.model(data) # inference
+                loss = self.criterion(output,target)
+                loss.backward()
+                self.optimizer.step()
 
     def train(self):
         rewards = []
