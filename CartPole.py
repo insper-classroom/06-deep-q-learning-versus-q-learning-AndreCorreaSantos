@@ -68,7 +68,7 @@ with open('results/cartpole_DeepQLearning_rewards.csv', 'a', newline='') as file
         writer.writerow([episode,reward])
         episode+=1
 
-model.save('data/model_cart_pole.keras')
+# model.save('data/model_cart_pole.keras')
 
 
 
