@@ -30,14 +30,13 @@ print('Action space: ', env.action_space)
 
 
 ## pytorch model
-
 model = nn.Sequential(
-    nn.Linear(env.observation_space.shape[0],512),
-    nn.ReLU(),
-    nn.Linear(512,256),
-    nn.ReLU(),
-    nn.Linear(256,env.action_space.n)
-)
+            nn.Linear(env.observation_space.shape[0],512),
+            nn.ReLU(),
+            nn.Linear(512,256),
+            nn.ReLU(),
+            nn.Linear(256,env.action_space.n)
+        )
 
 gamma = 0.99 
 epsilon = 1.0

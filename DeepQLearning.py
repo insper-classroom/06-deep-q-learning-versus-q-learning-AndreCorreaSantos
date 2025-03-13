@@ -1,8 +1,9 @@
 import numpy as np
 import random
-from keras.activations import relu, linear
+# from keras.activations import relu, linear
 import gc
-import keras
+# import keras
+import torch
 
 class DeepQLearning:
 
@@ -23,12 +24,19 @@ class DeepQLearning:
         self.memory = memory
         self.model = model
         self.max_steps = max_steps
+        self.device = torch.device("cuda")
+        self.model.to(self.device)
+
+    def convert(self, state):
+        return torch.tensor(state, dtype=torch.float32).to(self.device)
 
     def select_action(self, state):
         if np.random.rand() < self.epsilon:
             return random.randrange(self.env.action_space.n)
-        action = self.model.predict(state, verbose=0)
-        return np.argmax(action[0])
+        state_tensor = self.convert(state)
+        with torch.no_grad():
+            action = self.model(state_tensor)
+        return np.argmax(action.cpu().numpy())
 
     # cria uma memoria longa de experiencias
     def experience(self, state, action, reward, next_state, terminal):
@@ -50,18 +58,36 @@ class DeepQLearning:
             next_states = np.squeeze(next_states)
 
             # usando o modelo para selecionar as melhores acoes
-            next_max = np.amax(self.model.predict_on_batch(next_states), axis=1)
+            next_max = np.amax(self.predict_on_batch(next_states), axis=1)
             
             targets = rewards + self.gamma * (next_max) * (1 - terminals)
-            targets_full = self.model.predict_on_batch(states)
+            targets_full = self.predict_on_batch(states)
             indexes = np.array([i for i in range(self.batch_size)])
             
             # usando os q-valores para atualizar os pesos da rede
             targets_full[[indexes], [actions]] = targets
-            self.model.fit(states, targets_full, epochs=1, verbose=0)
+
+
+            self.fit_model(states, targets_full)
             
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_dec
+
+    def predict_on_batch(self, states):
+        self.model.eval()
+        states = self.convert(states)
+        with torch.no_grad():
+            predictions = self.model(states)
+        return predictions.cpu().numpy()
+
+    def fit_model(self,states, targets_full):
+        self.model.train()
+        for data,target in zip(states,targets_full):
+            print("data")
+            print(data)
+            print("target")
+            print(target)
+
 
     def train(self):
         rewards = []
@@ -90,6 +116,6 @@ class DeepQLearning:
                     break
             rewards.append(score)
             gc.collect()
-            keras.backend.clear_session()
+            # keras.backend.clear_session()
 
         return rewards

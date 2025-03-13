@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "CartPole.py", line 51, in <module>
+    rewards = DQN.train()
+  File "/home/andre/reinforcement/06-deep-q-learning-versus-q-learning-AndreCorreaSantos/DeepQLearning.py", line 107, in train
+    self.experience_replay()
+  File "/home/andre/reinforcement/06-deep-q-learning-versus-q-learning-AndreCorreaSantos/DeepQLearning.py", line 59, in experience_replay
+    next_max = np.amax(self.predict_on_batch(next_states), axis=1)
+  File "/home/andre/reinforcement/06-deep-q-learning-versus-q-learning-AndreCorreaSantos/DeepQLearning.py", line 75, in predict_on_batch
+    return [self.model(st) for st in states]
+  File "/home/andre/reinforcement/06-deep-q-learning-versus-q-learning-AndreCorreaSantos/DeepQLearning.py", line 75, in <listcomp>
+    return [self.model(st) for st in states]
+  File "/home/andre/miniconda3/envs/cuda/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/andre/miniconda3/envs/cuda/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/andre/miniconda3/envs/cuda/lib/python3.8/site-packages/torch/nn/modules/container.py", line 215, in forward
+    input = module(input)
+  File "/home/andre/miniconda3/envs/cuda/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/andre/miniconda3/envs/cuda/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/andre/miniconda3/envs/cuda/lib/python3.8/site-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0! (when checking argument for argument mat1 in method wrapper_CUDA_addmm)
