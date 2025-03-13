@@ -59,22 +59,17 @@ class DeepQLearning:
             next_values = self.predict_on_batch(next_states)
             next_max = torch.max(next_values, dim=1).values
 
-            print(f"Rewards shape: {rewards.shape}")
-            print(f"Next max shape: {next_max.shape}")
-            print(f"Terminals shape: {terminals.shape}")
-
 
             targets = rewards + self.gamma * next_max * (1 - terminals)
 
-            print(f"Targets shape {targets.shape}")
+
             
             targets_full = self.predict_on_batch(states)
-            print(f"targets_full shape {targets_full.shape}")
-            print(f"actions {actions.shape}")
+            indexes = np.array([i for i in range(self.batch_size)])
 
-            indexes = np.array([i for i in range(0,self.batch_size)])
-            targets_full[[indexes][actions]] = targets
-            print(f"states {states.shape}")
+            targets_full[indexes, actions] = targets
+
+
             self.fit_model(states, targets_full)
             
             if self.epsilon > self.epsilon_min:
