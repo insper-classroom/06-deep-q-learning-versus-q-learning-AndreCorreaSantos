@@ -45,8 +45,8 @@ gamma = 0.99
 epsilon = 1.0
 epsilon_min = 0.01
 epsilon_dec = 0.99
-episodes = 200
-batch_size = 64
+episodes = 400
+batch_size = 128
 memory = deque(maxlen=10000) #talvez usar uma memoria mais curta
 max_steps = 500
 

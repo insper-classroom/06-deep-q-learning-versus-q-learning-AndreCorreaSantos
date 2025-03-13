@@ -89,8 +89,13 @@ class DeepQLearning:
         loss = self.criterion(output, targets_full)  # Compute loss
         loss.backward()  # Backpropagate
         self.optimizer.step()  # Update weights
-
+    def avg(self,lst):
+        acc = 0
+        for i in lst:
+            acc += i
+        return acc / len(lst)
     def train(self):
+        scores = []
         rewards = []
         for i in range(self.episodes+1):
             (state,_) = self.env.reset()
@@ -113,7 +118,14 @@ class DeepQLearning:
                 state = next_state
                 self.experience_replay()
                 if done:
+
                     print(f'Episódio: {i+1}/{self.episodes}. Score: {score}')
+                    scores.append(score)
+                    if len(scores) > 10:
+                        scores.pop(0)
+                        if self.avg(scores)  > 490:
+                            gc.collect()
+                            return rewards
                     break
             rewards.append(score)
             gc.collect()
