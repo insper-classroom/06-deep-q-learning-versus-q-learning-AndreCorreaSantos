@@ -49,26 +49,35 @@ class DeepQLearning:
         if len(self.memory) > self.batch_size:
             batch = random.sample(self.memory, self.batch_size) #escolha aleatoria dos exemplos
             # everything to tensors on gpu
-            states = torch.tensor([i[0] for i in batch], dtype=torch.float32, device=self.device)
+            states = torch.tensor([i[0] for i in batch], dtype=torch.float32, device=self.device).squeeze(1)
             actions = torch.tensor([i[1] for i in batch], dtype=torch.long, device=self.device)
             rewards = torch.tensor([i[2] for i in batch], dtype=torch.float32, device=self.device)
             next_states = torch.tensor([i[3] for i in batch], dtype=torch.float32, device=self.device)
             terminals = torch.tensor([i[4] for i in batch], dtype=torch.float32, device=self.device)
             
 
+            next_values = self.predict_on_batch(next_states)
+            next_max = torch.max(next_values, dim=1).values
 
-            next_max = torch.max(self.predict_on_batch(next_states), dim=1)[0].detach()
             print(f"Rewards shape: {rewards.shape}")
             print(f"Next max shape: {next_max.shape}")
             print(f"Terminals shape: {terminals.shape}")
 
 
             targets = rewards + self.gamma * next_max * (1 - terminals)
+
+            print(f"Targets shape {targets.shape}")
             
             targets_full = self.predict_on_batch(states)
-            targets_full = targets_full.clone()  # Clone to avoid in-place modification
-            targets_full[torch.arange(self.batch_size), actions] = targets.detach()
+           
 
+            targets_full =  torch.max(targets_full, dim=1).values
+            targets_full = targets_full.clone()  # Clone to avoid in-place modification
+            print(f"targets_full shape {targets_full.shape}")
+            print(f"actions {actions.shape}")
+
+            targets_full[actions] = targets
+            print(f"states {states.shape}")
             self.fit_model(states, targets_full)
             
             if self.epsilon > self.epsilon_min:
@@ -77,7 +86,7 @@ class DeepQLearning:
     def predict_on_batch(self, states):
         self.model.eval()
         with torch.no_grad():
-            predictions = self.model(states)
+            predictions = self.model(states).squeeze(1)
         return predictions
 
     def fit_model(self, states, targets_full):
