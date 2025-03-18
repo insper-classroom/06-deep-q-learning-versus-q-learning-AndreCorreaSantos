@@ -49,11 +49,42 @@ class DeepQLearning:
         if len(self.memory) > self.batch_size:
             batch = random.sample(self.memory, self.batch_size) #escolha aleatoria dos exemplos
             # everything to tensors on gpu
-            states = torch.tensor([i[0] for i in batch], dtype=torch.float32, device=self.device).squeeze(1)
-            actions = torch.tensor([i[1] for i in batch], dtype=torch.long, device=self.device)
-            rewards = torch.tensor([i[2] for i in batch], dtype=torch.float32, device=self.device)
-            next_states = torch.tensor([i[3] for i in batch], dtype=torch.float32, device=self.device)
-            terminals = torch.tensor([i[4] for i in batch], dtype=torch.float32, device=self.device)
+            states = torch.tensor(np.array([i[0] for i in batch]), dtype=torch.float32, device=self.device).squeeze(1)
+            actions = torch.tensor(np.array([i[1] for i in batch]), dtype=torch.long, device=self.device)
+            rewards = torch.tensor(np.array([i[2] for i in batch]), dtype=torch.float32, device=self.device)
+            next_states = torch.tensor(np.array([i[3] for i in batch]), dtype=torch.float32, device=self.device)
+            terminals = torch.tensor(np.array([i[4] for i in batch]), dtype=torch.float32, device=self.device)
+            
+
+            next_values = self.predict_on_batch(next_states)
+            next_max = torch.max(next_values, dim=1).values
+
+
+            targets = rewards + self.gamma * next_max * (1 - terminals)
+
+
+            
+            targets_full = self.predict_on_batch(states)
+            indexes = np.array([i for i in range(self.batch_size)])
+
+            targets_full[indexes, actions] = targets
+
+
+            self.fit_model(states, targets_full)
+            
+            if self.epsilon > self.epsilon_min:
+                self.epsilon *= self.epsilon_dec
+
+    def experience_replay(self):
+        # soh acontece o treinamento depois da memoria ser maior que o batch_size informado
+        if len(self.memory) > self.batch_size:
+            batch = random.sample(self.memory, self.batch_size) #escolha aleatoria dos exemplos
+            # everything to tensors on gpu
+            states = torch.tensor(np.array([i[0] for i in batch]), dtype=torch.float32, device=self.device).squeeze(1)
+            actions = torch.tensor(np.array([i[1] for i in batch]), dtype=torch.long, device=self.device)
+            rewards = torch.tensor(np.array([i[2] for i in batch]), dtype=torch.float32, device=self.device)
+            next_states = torch.tensor(np.array([i[3] for i in batch]), dtype=torch.float32, device=self.device)
+            terminals = torch.tensor(np.array([i[4] for i in batch]), dtype=torch.float32, device=self.device)
             
 
             next_values = self.predict_on_batch(next_states)
@@ -123,12 +154,11 @@ class DeepQLearning:
                     scores.append(score)
                     if len(scores) > 10:
                         scores.pop(0)
-                        if self.avg(scores)  > 490:
+                        if len(scores) >= self.episodes:
                             gc.collect()
                             return rewards
                     break
             rewards.append(score)
             gc.collect()
-            # keras.backend.clear_session()
 
         return rewards
