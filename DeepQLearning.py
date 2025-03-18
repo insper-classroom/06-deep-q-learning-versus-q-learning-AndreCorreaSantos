@@ -162,3 +162,36 @@ class DeepQLearning:
             gc.collect()
 
         return rewards
+    
+    def evaluate(self, num_episodes=100):
+        rewards = []
+        
+        for i in range(num_episodes):
+            (state, _) = self.env.reset()
+            state = np.reshape(state, (1, self.env.observation_space.shape[0]))
+            score = 0
+            steps = 0
+            done = False
+            
+            while not done:
+                steps += 1
+                state_tensor = self.convert(state).unsqueeze(0)
+                with torch.no_grad():
+                    action_values = self.model(state_tensor)
+                    action = torch.argmax(action_values).item()
+                
+                next_state, reward, terminal, truncated, _ = self.env.step(action)
+                if terminal or truncated or (steps > self.max_steps):
+                    done = True
+                
+                score += reward
+                next_state = np.reshape(next_state, (1, self.env.observation_space.shape[0]))
+                state = next_state
+                
+                if done:
+                    print(f'Evaluation Episode: {i+1}/{num_episodes}. Score: {score}')
+                    break
+            
+            rewards.append(score)
+        
+        return rewards
