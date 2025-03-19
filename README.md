@@ -9,6 +9,14 @@
 </p>
 
 ### Training DQN vs Q-learning 400 episodes:
+#### N run = 1
+
+<p align="center">
+  <img src="output.png" width="1000">  <br>
+</p>
+
+
+
 #### N runs = 5
 
 <p align="center">
